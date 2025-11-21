@@ -36,9 +36,13 @@ const GLOBE_CONFIG: COBEOptions = {
 export function Globe({
     className,
     config = GLOBE_CONFIG,
+    markers,
+    onMarkerUpdate,
 }: {
     className?: string
     config?: COBEOptions
+    markers?: { location: [number, number]; size: number }[]
+    onMarkerUpdate?: (positions: { lat: number; lng: number; x: number; y: number; visible: boolean }[]) => void
 }) {
     let phi = 0
     let width = 0
@@ -68,8 +72,44 @@ export function Globe({
             state.phi = phi + r
             state.width = width * 2
             state.height = width * 2
+
+            // Calculate marker positions if callback is provided
+            if (onMarkerUpdate && markers) {
+                const positions = markers.map(marker => {
+                    const [lat, lng] = marker.location
+
+                    // Convert lat/lng to 3D coordinates
+                    const latRad = (lat * Math.PI) / 180
+                    const lngRad = (lng * Math.PI) / 180
+
+                    // Apply globe rotation
+                    const rotatedLng = lngRad - (state.phi || 0)
+
+                    // Project to 2D screen coordinates
+                    const x = Math.sin(rotatedLng) * Math.cos(latRad)
+                    const y = -Math.sin(latRad)
+                    const z = Math.cos(rotatedLng) * Math.cos(latRad)
+
+                    // Check if marker is visible (on front of globe)
+                    const visible = z > 0
+
+                    // Convert to percentage coordinates (centered at 50%, 50%)
+                    const screenX = 50 + x * 35
+                    const screenY = 50 + y * 35
+
+                    return {
+                        lat,
+                        lng,
+                        x: screenX,
+                        y: screenY,
+                        visible
+                    }
+                })
+
+                onMarkerUpdate(positions)
+            }
         },
-        [r],
+        [r, onMarkerUpdate, markers],
     )
 
     const onResize = () => {
@@ -87,6 +127,7 @@ export function Globe({
             width: width * 2,
             height: width * 2,
             onRender,
+            markers: markers || config.markers,
         })
 
         setTimeout(() => (canvasRef.current!.style.opacity = "1"))

@@ -51,25 +51,25 @@ export function ImmersiveExperience() {
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
                 >
-                    <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 uppercase tracking-widest">
+                    <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 uppercase tracking-widest">
                         {viewMode === "cockpit" ? "Cockpit View" : "Front View"}
                     </h2>
-                    <p className="text-gray-400">Engage the hypercar experience.</p>
+                    <p className="text-gray-400 text-sm md:text-base">Engage the hypercar experience.</p>
                 </motion.div>
 
                 {/* Controls */}
-                <div className="flex gap-6 mb-8">
+                <div className="flex flex-wrap gap-3 md:gap-6 mb-8 justify-center">
                     <button
                         onClick={() => setViewMode("cockpit")}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all ${viewMode === "cockpit" ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-full font-bold text-sm md:text-base transition-all ${viewMode === "cockpit" ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
                     >
-                        <Gauge className="w-5 h-5" /> Cockpit
+                        <Gauge className="w-4 h-4 md:w-5 md:h-5" /> Cockpit
                     </button>
                     <button
                         onClick={() => setViewMode("front")}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all ${viewMode === "front" ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
+                        className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-full font-bold text-sm md:text-base transition-all ${viewMode === "front" ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
                     >
-                        <Eye className="w-5 h-5" /> Front View
+                        <Eye className="w-4 h-4 md:w-5 md:h-5" /> Front View
                     </button>
                 </div>
 
@@ -78,12 +78,12 @@ export function ImmersiveExperience() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsStarted(!isStarted)}
-                    className={`w-24 h-24 rounded-full flex items-center justify-center border-4 transition-all duration-500 ${isStarted
-                            ? "border-red-500 bg-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.5)]"
-                            : "border-white/20 bg-white/5 hover:border-white/50"
+                    className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center border-4 transition-all duration-500 ${isStarted
+                        ? "border-red-500 bg-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.5)]"
+                        : "border-white/20 bg-white/5 hover:border-white/50"
                         }`}
                 >
-                    <Power className={`w-10 h-10 ${isStarted ? "text-red-500" : "text-white"}`} />
+                    <Power className={`w-8 h-8 md:w-10 md:h-10 ${isStarted ? "text-red-500" : "text-white"}`} />
                 </motion.button>
 
                 {/* Dashboard (Cockpit Mode) */}
@@ -96,12 +96,12 @@ export function ImmersiveExperience() {
                             className="w-full bg-black/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 grid grid-cols-1 md:grid-cols-3 gap-8 mt-8 shadow-2xl"
                         >
                             {/* Speedometer */}
-                            <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-2xl border border-white/5">
-                                <Gauge className="w-8 h-8 text-blue-400 mb-4" />
-                                <span className="text-6xl font-mono font-bold text-white tabular-nums">
+                            <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/5 rounded-2xl border border-white/5">
+                                <Gauge className="w-6 h-6 md:w-8 md:h-8 text-blue-400 mb-4" />
+                                <span className="text-4xl md:text-6xl font-mono font-bold text-white tabular-nums">
                                     {speed}
                                 </span>
-                                <span className="text-sm text-gray-400 uppercase tracking-wider mt-2">KM/H</span>
+                                <span className="text-xs md:text-sm text-gray-400 uppercase tracking-wider mt-2">KM/H</span>
                             </div>
 
                             {/* Center Console */}
@@ -112,27 +112,27 @@ export function ImmersiveExperience() {
                                         style={{ width: `${(rpm / 9000) * 100}%` }}
                                     />
                                 </div>
-                                <span className="text-2xl font-mono font-bold text-white tabular-nums">
-                                    {rpm} <span className="text-sm text-gray-500">RPM</span>
+                                <span className="text-xl md:text-2xl font-mono font-bold text-white tabular-nums">
+                                    {rpm} <span className="text-xs md:text-sm text-gray-500">RPM</span>
                                 </span>
-                                <div className="flex gap-4 mt-4">
-                                    <div className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg text-xs font-bold uppercase border border-green-500/30">
+                                <div className="flex flex-wrap gap-2 md:gap-4 mt-4 justify-center">
+                                    <div className="px-3 md:px-4 py-1.5 md:py-2 bg-green-500/20 text-green-400 rounded-lg text-xs font-bold uppercase border border-green-500/30">
                                         Sport Mode
                                     </div>
-                                    <div className="px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg text-xs font-bold uppercase border border-orange-500/30">
+                                    <div className="px-3 md:px-4 py-1.5 md:py-2 bg-orange-500/20 text-orange-400 rounded-lg text-xs font-bold uppercase border border-orange-500/30">
                                         Traction Off
                                     </div>
                                 </div>
                             </div>
 
                             {/* Battery/Power */}
-                            <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-2xl border border-white/5">
+                            <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-white/5 rounded-2xl border border-white/5">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <Battery className="w-6 h-6 text-green-400" />
-                                    <Zap className="w-6 h-6 text-yellow-400" />
+                                    <Battery className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
+                                    <Zap className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
                                 </div>
                                 <div className="text-center">
-                                    <span className="block text-3xl font-bold text-white">98%</span>
+                                    <span className="block text-2xl md:text-3xl font-bold text-white">98%</span>
                                     <span className="text-xs text-gray-400 uppercase">Battery</span>
                                 </div>
                                 <div className="w-full h-1 bg-neutral-700 rounded-full mt-4 overflow-hidden">
@@ -150,10 +150,10 @@ export function ImmersiveExperience() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute bottom-10 w-full max-w-4xl flex justify-between px-8 pointer-events-none"
+                            className="absolute bottom-10 w-full max-w-4xl flex justify-between px-4 md:px-8 pointer-events-none"
                         >
-                            <div className="text-white font-mono text-4xl font-bold drop-shadow-lg">{speed} <span className="text-sm">KM/H</span></div>
-                            <div className="text-white font-mono text-4xl font-bold drop-shadow-lg">{rpm} <span className="text-sm">RPM</span></div>
+                            <div className="text-white font-mono text-2xl md:text-4xl font-bold drop-shadow-lg">{speed} <span className="text-xs md:text-sm">KM/H</span></div>
+                            <div className="text-white font-mono text-2xl md:text-4xl font-bold drop-shadow-lg">{rpm} <span className="text-xs md:text-sm">RPM</span></div>
                         </motion.div>
                     )}
                 </AnimatePresence>

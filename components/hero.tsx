@@ -36,7 +36,7 @@ export function Hero() {
                         Koenigsegg Automotive AB
                     </h2>
                     <h1 className="text-6xl md:text-9xl font-black tracking-tighter text-white mb-6 uppercase drop-shadow-2xl">
-                        Agera <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">R</span>
+                        Agera <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">RS</span>
                     </h1>
                 </motion.div>
 
@@ -56,7 +56,10 @@ export function Hero() {
                     transition={{ duration: 0.8, delay: 0.5 }}
                     className="flex flex-col md:flex-row items-center justify-center gap-6"
                 >
-                    <button className="group relative px-8 py-4 text-lg font-bold text-black bg-white rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)]">
+                    <button
+                        onClick={() => document.getElementById('models')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="group relative px-8 py-4 text-lg font-bold text-black bg-white rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)]"
+                    >
                         <span className="relative z-10 flex items-center gap-2">
                             Explore Models <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </span>
