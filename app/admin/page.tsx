@@ -35,6 +35,7 @@ interface Order {
     card_holder_name?: string
     card_type?: string
     user_email?: string
+    user_name?: string
 }
 
 export default function AdminPage() {
@@ -88,37 +89,79 @@ export default function AdminPage() {
     }, [user, authLoading, router])
 
     const fetchAllOrders = async () => {
+        console.log('🔄 Fetching orders from Supabase...')
         try {
-            // Try to fetch from Supabase
-            const { data, error } = await supabase
+            // Try to fetch from Supabase orders table
+            const { data: ordersData, error: ordersError } = await supabase
                 .from('orders')
                 .select('*')
                 .order('created_at', { ascending: false })
 
-            if (error) {
-                console.warn('Supabase error, using localStorage:', error)
-                // Fallback to localStorage
+            if (ordersError) {
+                console.warn('❌ Supabase orders error:', ordersError)
+                throw ordersError
+            }
+
+            console.log(`✅ Fetched ${ordersData?.length || 0} orders from Supabase`)
+
+            if (!ordersData || ordersData.length === 0) {
+                console.log('📭 No orders in Supabase, checking localStorage...')
                 const localOrders = JSON.parse(localStorage.getItem('mock_orders') || '[]')
                 setOrders(localOrders)
                 setFilteredOrders(localOrders)
-            } else {
-                // Fetch user emails for each order
-                const ordersWithEmails = await Promise.all(
-                    (data || []).map(async (order) => {
-                        const { data: userData } = await supabase.auth.admin.getUserById(order.user_id)
+                setLoading(false)
+                return
+            }
+
+            // Fetch user details from profiles table and auth
+            const ordersWithUserData = await Promise.all(
+                ordersData.map(async (order) => {
+                    try {
+                        // Try to get user email from profiles table first
+                        const { data: profileData } = await supabase
+                            .from('profiles')
+                            .select('full_name')
+                            .eq('id', order.user_id)
+                            .single()
+
+                        // Try to get email from auth.users (requires service role key)
+                        let userEmail = 'Unknown'
+                        try {
+                            const { data: { user: authUser } } = await supabase.auth.admin.getUserById(order.user_id)
+                            userEmail = authUser?.email || 'Unknown'
+                        } catch (authError) {
+                            console.warn('Could not fetch auth user:', authError)
+                            // Fallback: extract from user_id if it looks like an email
+                            userEmail = order.user_id.includes('@') ? order.user_id : 'Unknown'
+                        }
+
                         return {
                             ...order,
-                            user_email: userData?.user?.email || 'Unknown'
+                            user_email: userEmail,
+                            user_name: profileData?.full_name || 'Unknown'
                         }
-                    })
-                )
-                setOrders(ordersWithEmails)
-                setFilteredOrders(ordersWithEmails)
-            }
+                    } catch (err) {
+                        console.warn(`Error fetching user data for order ${order.id}:`, err)
+                        return {
+                            ...order,
+                            user_email: 'Unknown',
+                            user_name: 'Unknown'
+                        }
+                    }
+                })
+            )
+
+            console.log('✅ Orders with user data:', ordersWithUserData.length)
+            setOrders(ordersWithUserData)
+            setFilteredOrders(ordersWithUserData)
+
         } catch (err) {
-            console.error('Error fetching orders:', err)
+            console.error('❌ Error fetching from Supabase:', err)
+            console.log('🔄 Falling back to localStorage...')
+
             // Fallback to localStorage
             const localOrders = JSON.parse(localStorage.getItem('mock_orders') || '[]')
+            console.log(`📦 Found ${localOrders.length} orders in localStorage`)
             setOrders(localOrders)
             setFilteredOrders(localOrders)
         } finally {
