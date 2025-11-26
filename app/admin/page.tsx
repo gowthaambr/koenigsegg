@@ -54,8 +54,24 @@ export default function AdminPage() {
     const ADMIN_EMAIL = "admin@koenigsegg.com" // TODO: Change to your admin email
 
     useEffect(() => {
+        // Check for hardcoded admin session first
+        const adminSession = localStorage.getItem('admin_session')
+        if (adminSession) {
+            try {
+                const session = JSON.parse(adminSession)
+                if (session.isAdmin && session.email === ADMIN_EMAIL) {
+                    setIsAdmin(true)
+                    fetchAllOrders()
+                    return
+                }
+            } catch (e) {
+                console.error('Invalid admin session')
+            }
+        }
+
+        // Otherwise check Supabase authentication
         if (!authLoading && !user) {
-            router.push('/signin')
+            router.push('/admin/login')
             return
         }
 
@@ -207,7 +223,10 @@ export default function AdminPage() {
                             <p className="text-white/60">Manage all Koenigsegg orders</p>
                         </div>
                         <button
-                            onClick={() => router.push('/')}
+                            onClick={() => {
+                                localStorage.removeItem('admin_session')
+                                router.push('/')
+                            }}
                             className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
                         >
                             <LogOut className="w-4 h-4" />

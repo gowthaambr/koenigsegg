@@ -16,8 +16,9 @@ export default function AdminLoginPage() {
     const { signIn } = useAuth()
     const router = useRouter()
 
-    // Admin email - Change this to your admin email
-    const ADMIN_EMAIL = "admin@koenigsegg.com" // TODO: Change to your admin email
+    // Hardcoded admin credentials - Works without Supabase
+    const ADMIN_EMAIL = "admin@koenigsegg.com"
+    const ADMIN_PASSWORD = "Admin@123"
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -25,18 +26,32 @@ export default function AdminLoginPage() {
         setLoading(true)
 
         try {
-            // Check if email is admin email
+            // Check hardcoded admin credentials first
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                // Store admin session in localStorage
+                localStorage.setItem('admin_session', JSON.stringify({
+                    email: ADMIN_EMAIL,
+                    isAdmin: true,
+                    loginTime: new Date().toISOString()
+                }))
+
+                // Redirect to admin dashboard
+                router.push('/admin')
+                return
+            }
+
+            // If not hardcoded admin, try Supabase authentication
             if (email !== ADMIN_EMAIL) {
                 setError("Access denied. This email is not authorized for admin access.")
                 setLoading(false)
                 return
             }
 
-            // Sign in with Supabase
+            // Try Supabase sign in for admin email with different password
             const { error: signInError } = await signIn(email, password)
 
             if (signInError) {
-                setError(signInError.message)
+                setError("Invalid credentials. Please check your email and password.")
                 setLoading(false)
                 return
             }
@@ -44,7 +59,7 @@ export default function AdminLoginPage() {
             // Redirect to admin dashboard
             router.push('/admin')
         } catch (err) {
-            setError("An unexpected error occurred. Please try again.")
+            setError("Invalid credentials. Please try again.")
             setLoading(false)
         }
     }
