@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Lock, Mail, ArrowLeft, Shield } from "lucide-react"
+import { Lock, Mail, ArrowLeft, Shield, Fingerprint } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 
 export default function AdminLoginPage() {
@@ -12,6 +12,8 @@ export default function AdminLoginPage() {
     const [password, setPassword] = useState("")
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+    const [biometricAvailable, setBiometricAvailable] = useState(false)
+    const [biometricRegistered, setBiometricRegistered] = useState(false)
 
     const { signIn } = useAuth()
     const router = useRouter()
@@ -19,6 +21,18 @@ export default function AdminLoginPage() {
     // Hardcoded admin credentials - Works without Supabase
     const ADMIN_EMAIL = "admin@koenigsegg.com"
     const ADMIN_PASSWORD = "Admin@123"
+
+    // Check if biometric authentication is available
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.PublicKeyCredential) {
+            setBiometricAvailable(true)
+            // Check if fingerprint is already registered
+            const registered = localStorage.getItem('admin_biometric_registered')
+            if (registered === 'true') {
+                setBiometricRegistered(true)
+            }
+        }
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -64,6 +78,125 @@ export default function AdminLoginPage() {
         }
     }
 
+    const registerFingerprint = async () => {
+        if (!biometricAvailable) {
+            setError("Biometric authentication is not available on this device.")
+            return
+        }
+
+        try {
+            setLoading(true)
+            setError(null)
+
+            // Create credential options
+            const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
+                challenge: new Uint8Array(32), // In production, get this from server
+                rp: {
+                    name: "Koenigsegg Admin",
+                    id: window.location.hostname,
+                },
+                user: {
+                    id: new Uint8Array(16),
+                    name: ADMIN_EMAIL,
+                    displayName: "Admin",
+                },
+                pubKeyCredParams: [
+                    { alg: -7, type: "public-key" },  // ES256
+                    { alg: -257, type: "public-key" } // RS256
+                ],
+                authenticatorSelection: {
+                    authenticatorAttachment: "platform",
+                    userVerification: "required",
+                },
+                timeout: 60000,
+                attestation: "direct"
+            }
+
+            // Create credential
+            const credential = await navigator.credentials.create({
+                publicKey: publicKeyCredentialCreationOptions
+            }) as PublicKeyCredential
+
+            if (credential) {
+                // Store credential ID
+                localStorage.setItem('admin_biometric_registered', 'true')
+                localStorage.setItem('admin_credential_id', credential.id)
+                setBiometricRegistered(true)
+                setError(null)
+                alert("✅ Fingerprint registered successfully! You can now use biometric login.")
+            }
+        } catch (err: any) {
+            console.error('Biometric registration error:', err)
+            if (err.name === 'NotAllowedError') {
+                setError("Biometric registration was cancelled.")
+            } else if (err.name === 'NotSupportedError') {
+                setError("Biometric authentication is not supported on this device.")
+            } else {
+                setError("Failed to register fingerprint. Please try again.")
+            }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const loginWithFingerprint = async () => {
+        if (!biometricRegistered) {
+            setError("Please register your fingerprint first.")
+            return
+        }
+
+        try {
+            setLoading(true)
+            setError(null)
+
+            const credentialId = localStorage.getItem('admin_credential_id')
+            if (!credentialId) {
+                setError("No fingerprint registered. Please register first.")
+                setLoading(false)
+                return
+            }
+
+            // Get credential options
+            const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
+                challenge: new Uint8Array(32), // In production, get this from server
+                allowCredentials: [{
+                    id: Uint8Array.from(atob(credentialId), c => c.charCodeAt(0)),
+                    type: 'public-key',
+                    transports: ['internal']
+                }],
+                timeout: 60000,
+                userVerification: "required"
+            }
+
+            // Get credential
+            const assertion = await navigator.credentials.get({
+                publicKey: publicKeyCredentialRequestOptions
+            }) as PublicKeyCredential
+
+            if (assertion) {
+                // Store admin session
+                localStorage.setItem('admin_session', JSON.stringify({
+                    email: ADMIN_EMAIL,
+                    isAdmin: true,
+                    loginTime: new Date().toISOString(),
+                    method: 'biometric'
+                }))
+
+                // Redirect to admin dashboard
+                router.push('/admin')
+            }
+        } catch (err: any) {
+            console.error('Biometric login error:', err)
+            if (err.name === 'NotAllowedError') {
+                setError("Biometric authentication was cancelled.")
+            } else {
+                setError("Biometric authentication failed. Please try password login.")
+            }
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return (
         <main
             className="min-h-screen !bg-black text-white flex items-center justify-center p-6 relative overflow-hidden"
@@ -104,6 +237,39 @@ export default function AdminLoginPage() {
                         >
                             {error}
                         </motion.div>
+                    )}
+
+                    {/* Biometric Login Option */}
+                    {biometricAvailable && (
+                        <div className="mb-6">
+                            {biometricRegistered ? (
+                                <button
+                                    onClick={loginWithFingerprint}
+                                    disabled={loading}
+                                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold uppercase tracking-widest py-4 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 hover:scale-[1.02]"
+                                >
+                                    <Fingerprint className="w-6 h-6" />
+                                    {loading ? "Authenticating..." : "Login with Fingerprint"}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={registerFingerprint}
+                                    disabled={loading}
+                                    className="w-full bg-white/10 border border-white/20 text-white font-bold uppercase tracking-widest py-4 rounded-full hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                >
+                                    <Fingerprint className="w-6 h-6" />
+                                    {loading ? "Registering..." : "Register Fingerprint"}
+                                </button>
+                            )}
+                            <div className="relative my-6">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-white/10"></div>
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-neutral-900 px-2 text-white/40">Or use password</span>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {/* Login Form */}
