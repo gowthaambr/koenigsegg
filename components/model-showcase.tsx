@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Info, ArrowRight, Palette } from "lucide-react"
+import { Info, ArrowRight, Palette, ShoppingCart } from "lucide-react"
+import Link from "next/link"
+import { useCart } from "@/lib/cart/CartContext"
 
 interface CarModel {
     id: string
@@ -158,6 +160,11 @@ export function ModelShowcase() {
     const [selectedModel, setSelectedModel] = useState<CarModel>(models[0])
     const [selectedRim, setSelectedRim] = useState(models[0].rims[0])
     const [selectedColor, setSelectedColor] = useState(models[0].colors[0])
+    const { addToCart } = useCart()
+
+    const handleAddToCart = () => {
+        addToCart(selectedModel.name, selectedModel.price)
+    }
 
     // Ensure selected color is valid when rim changes
     const availableColors = selectedModel.colors.filter(
@@ -330,6 +337,35 @@ export function ModelShowcase() {
                                     <p className="text-lg text-white/90 leading-relaxed max-w-2xl mb-8">
                                         {selectedModel.description}
                                     </p>
+
+                                    {/* Action Buttons - Only for Current Models */}
+                                    {selectedModel.category === "current" && (
+                                        <div className="flex flex-wrap gap-4 mb-8">
+                                            <button
+                                                onClick={handleAddToCart}
+                                                className="flex items-center gap-2 px-8 py-4 bg-white/10 text-white font-bold uppercase tracking-wider rounded-full hover:bg-white/20 transition-all hover:scale-105 border border-white/20"
+                                            >
+                                                <ShoppingCart className="w-5 h-5" />
+                                                Add to Cart
+                                            </button>
+                                            <Link
+                                                href="/order"
+                                                className="flex items-center gap-2 px-8 py-4 bg-white text-black font-bold uppercase tracking-wider rounded-full hover:bg-gray-200 transition-all hover:scale-105"
+                                            >
+                                                Order Now
+                                                <ArrowRight className="w-5 h-5" />
+                                            </Link>
+                                        </div>
+                                    )}
+
+                                    {/* Legacy Model Notice */}
+                                    {selectedModel.category === "legacy" && (
+                                        <div className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                                            <p className="text-yellow-400 text-sm font-medium">
+                                                ⚠️ This is a legacy model and is no longer available for purchase. Explore our current lineup for the latest innovations.
+                                            </p>
+                                        </div>
+                                    )}
 
                                     {/* News / Footer */}
                                     <div className="mt-auto pt-8 border-t border-white/10">

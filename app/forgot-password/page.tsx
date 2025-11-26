@@ -4,25 +4,43 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { ArrowLeft, Mail } from "lucide-react"
+import { useAuth } from "@/lib/auth/AuthContext"
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("")
     const [submitted, setSubmitted] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(false)
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const { resetPassword } = useAuth()
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        console.log("Password reset requested for:", email)
-        setSubmitted(true)
-        // Handle password reset logic here
+        setError(null)
+        setLoading(true)
+
+        try {
+            const { error: resetError } = await resetPassword(email)
+
+            if (resetError) {
+                setError(resetError.message)
+            } else {
+                setSubmitted(true)
+            }
+        } catch (err) {
+            setError("An unexpected error occurred. Please try again.")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
-        <main className="min-h-screen bg-black text-white flex items-center justify-center p-6 relative overflow-hidden">
+        <main
+            className="min-h-screen !bg-black text-white flex items-center justify-center p-6 relative overflow-hidden"
+            style={{ backgroundColor: '#000000' }}
+        >
             {/* Background Elements */}
-            <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),rgba(0,0,0,0))]" />
-                <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.png')] opacity-20" />
-            </div>
+            <div className="absolute inset-0 z-0 bg-black" />
 
             <div className="relative z-10 w-full max-w-md">
                 <Link href="/signin" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-8 transition-colors">
@@ -44,6 +62,16 @@ export default function ForgotPasswordPage() {
                                 <p className="text-white/60 text-sm">Enter your email to reset your password</p>
                             </div>
 
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mb-5 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm"
+                                >
+                                    {error}
+                                </motion.div>
+                            )}
+
                             <form onSubmit={handleSubmit} className="space-y-5">
                                 <div className="space-y-2">
                                     <label htmlFor="email" className="text-xs font-bold uppercase text-white/70 ml-1">Email Address</label>
@@ -61,9 +89,10 @@ export default function ForgotPasswordPage() {
 
                                 <button
                                     type="submit"
-                                    className="w-full bg-white text-black font-bold uppercase tracking-widest py-4 rounded-full hover:bg-gray-200 transition-all hover:scale-[1.02] mt-4"
+                                    disabled={loading}
+                                    className="w-full bg-white text-black font-bold uppercase tracking-widest py-4 rounded-full hover:bg-gray-200 transition-all hover:scale-[1.02] mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
-                                    Send Reset Link
+                                    {loading ? "Sending..." : "Send Reset Link"}
                                 </button>
 
                                 <div className="text-center mt-4">
@@ -82,8 +111,8 @@ export default function ForgotPasswordPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             className="text-center py-8"
                         >
-                            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                                <Mail className="w-8 h-8 text-green-400" />
+                            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-white/10 flex items-center justify-center border-2 border-white">
+                                <Mail className="w-8 h-8 text-white" />
                             </div>
                             <h2 className="text-2xl font-bold mb-4">Check Your Email</h2>
                             <p className="text-white/70 mb-6">

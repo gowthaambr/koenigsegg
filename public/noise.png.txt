@@ -1,0 +1,1 @@
+This is a placeholder. The noise.png texture will be generated or you can remove references to it.

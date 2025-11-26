@@ -7,10 +7,8 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 
-export default function SignUpPage() {
+export default function ResetPasswordPage() {
     const [formData, setFormData] = useState({
-        name: "",
-        email: "",
         password: "",
         confirmPassword: ""
     })
@@ -20,7 +18,7 @@ export default function SignUpPage() {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
 
-    const { signUp } = useAuth()
+    const { updatePassword } = useAuth()
     const router = useRouter()
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,20 +45,16 @@ export default function SignUpPage() {
         setLoading(true)
 
         try {
-            const { error: signUpError } = await signUp(
-                formData.email,
-                formData.password,
-                { full_name: formData.name }
-            )
+            const { error: updateError } = await updatePassword(formData.password)
 
-            if (signUpError) {
-                setError(signUpError.message)
+            if (updateError) {
+                setError(updateError.message)
             } else {
                 setSuccess(true)
-                // Redirect to onboarding after 3 seconds to allow session to establish
+                // Redirect to sign-in after 2 seconds
                 setTimeout(() => {
-                    router.push('/onboarding')
-                }, 3000)
+                    router.push('/signin')
+                }, 2000)
             }
         } catch (err) {
             setError("An unexpected error occurred. Please try again.")
@@ -75,7 +69,6 @@ export default function SignUpPage() {
                 className="min-h-screen !bg-black text-white flex items-center justify-center p-6 relative overflow-hidden"
                 style={{ backgroundColor: '#000000' }}
             >
-                {/* Background Elements */}
                 <div className="absolute inset-0 z-0 bg-black" />
 
                 <motion.div
@@ -88,12 +81,12 @@ export default function SignUpPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h1 className="text-3xl font-bold mb-4">Account Created!</h1>
+                    <h1 className="text-3xl font-bold mb-4">Password Updated!</h1>
                     <p className="text-white/70 mb-6">
-                        Welcome to Koenigsegg. Please check your email to verify your account.
+                        Your password has been successfully updated.
                     </p>
                     <p className="text-sm text-white/50">
-                        Redirecting to onboarding...
+                        Redirecting to sign in...
                     </p>
                 </motion.div>
             </main>
@@ -109,8 +102,8 @@ export default function SignUpPage() {
             <div className="absolute inset-0 z-0 bg-black" />
 
             <div className="relative z-10 w-full max-w-md">
-                <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-8 transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Back to Home
+                <Link href="/signin" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-8 transition-colors">
+                    <ArrowLeft className="w-4 h-4" /> Back to Sign In
                 </Link>
 
                 <motion.div
@@ -119,8 +112,8 @@ export default function SignUpPage() {
                     className="bg-neutral-900/50 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl"
                 >
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold uppercase tracking-wider mb-2">Create Account</h1>
-                        <p className="text-white/60 text-sm">Join the exclusive world of Koenigsegg</p>
+                        <h1 className="text-3xl font-bold uppercase tracking-wider mb-2">Reset Password</h1>
+                        <p className="text-white/60 text-sm">Enter your new password</p>
                     </div>
 
                     {error && (
@@ -135,35 +128,7 @@ export default function SignUpPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
-                            <label htmlFor="name" className="text-xs font-bold uppercase text-white/70 ml-1">Full Name</label>
-                            <input
-                                type="text"
-                                id="name"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                required
-                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors"
-                                placeholder="John Doe"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label htmlFor="email" className="text-xs font-bold uppercase text-white/70 ml-1">Email Address</label>
-                            <input
-                                type="email"
-                                id="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                required
-                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors"
-                                placeholder="john@example.com"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label htmlFor="password" className="text-xs font-bold uppercase text-white/70 ml-1">Password</label>
+                            <label htmlFor="password" className="text-xs font-bold uppercase text-white/70 ml-1">New Password</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
@@ -186,7 +151,7 @@ export default function SignUpPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="confirmPassword" className="text-xs font-bold uppercase text-white/70 ml-1">Confirm Password</label>
+                            <label htmlFor="confirmPassword" className="text-xs font-bold uppercase text-white/70 ml-1">Confirm New Password</label>
                             <div className="relative">
                                 <input
                                     type={showConfirmPassword ? "text" : "password"}
@@ -213,17 +178,8 @@ export default function SignUpPage() {
                             disabled={loading}
                             className="w-full bg-white text-black font-bold uppercase tracking-widest py-4 rounded-full hover:bg-gray-200 transition-all hover:scale-[1.02] mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            {loading ? "Creating Account..." : "Sign Up"}
+                            {loading ? "Updating Password..." : "Update Password"}
                         </button>
-
-                        <div className="text-center mt-4 space-y-2">
-                            <p className="text-sm text-white/60">
-                                Already have an account?{" "}
-                                <Link href="/signin" className="text-white hover:underline font-medium">
-                                    Sign In
-                                </Link>
-                            </p>
-                        </div>
                     </form>
                 </motion.div>
             </div>
