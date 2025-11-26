@@ -51,6 +51,15 @@ export function Navbar() {
                     Dealers
                 </button>
 
+                {/* Admin Button */}
+                <Link
+                    href="/admin/login"
+                    className="px-3 py-1.5 text-xs font-bold text-white/80 hover:text-white border border-white/20 rounded-full hover:bg-white/10 transition-all uppercase tracking-wider"
+                    title="Admin Access"
+                >
+                    Admin
+                </Link>
+
                 {/* Cart Icon */}
                 <Link href="/cart" className="relative">
                     <ShoppingCart className="w-5 h-5 text-white/80 hover:text-white transition-colors" />
