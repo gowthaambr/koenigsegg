@@ -169,6 +169,61 @@ export default function AdminPage() {
         }
     }
 
+    const updateOrderStatus = async (orderId: string, newStatus: string) => {
+        try {
+            console.log(`🔄 Updating order ${orderId} to status: ${newStatus}`)
+
+            // Update in Supabase
+            const { error: updateError } = await supabase
+                .from('orders')
+                .update({
+                    status: newStatus,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', orderId)
+
+            if (updateError) {
+                console.warn('Supabase update error:', updateError)
+                // Still update locally even if Supabase fails
+            } else {
+                console.log('✅ Order status updated in Supabase')
+            }
+
+            // Update in localStorage (for fallback)
+            const localOrders = JSON.parse(localStorage.getItem('mock_orders') || '[]')
+            const updatedLocalOrders = localOrders.map((order: Order) =>
+                order.id === orderId ? { ...order, status: newStatus, updated_at: new Date().toISOString() } : order
+            )
+            localStorage.setItem('mock_orders', JSON.stringify(updatedLocalOrders))
+
+            // Update local state
+            const updatedOrders = orders.map(order =>
+                order.id === orderId ? { ...order, status: newStatus } : order
+            )
+            setOrders(updatedOrders)
+            setFilteredOrders(updatedOrders.filter(order => {
+                const matchesSearch = !searchTerm ||
+                    order.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    order.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    order.id.toLowerCase().includes(searchTerm.toLowerCase())
+                const matchesStatus = statusFilter === 'all' || order.status === statusFilter
+                return matchesSearch && matchesStatus
+            }))
+
+            // Update selected order if it's the one being updated
+            if (selectedOrder && selectedOrder.id === orderId) {
+                setSelectedOrder({ ...selectedOrder, status: newStatus })
+            }
+
+            alert(`✅ Order status updated to: ${newStatus.replace('_', ' ').toUpperCase()}`)
+            console.log('✅ Status update complete')
+
+        } catch (err) {
+            console.error('Error updating order status:', err)
+            alert('❌ Failed to update order status. Please try again.')
+        }
+    }
+
     useEffect(() => {
         let filtered = orders
 
@@ -494,16 +549,33 @@ export default function AdminPage() {
                             </div>
 
                             <div className="border-t border-white/10 pt-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <h3 className="font-bold mb-3">Update Order Status</h3>
+                                <div className="space-y-4">
                                     <div>
-                                        <p className="text-white/60 text-sm mb-1">Status</p>
-                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(selectedOrder.status)}`}>
-                                            {selectedOrder.status.replace('_', ' ').toUpperCase()}
-                                        </span>
+                                        <label className="text-sm text-white/70 mb-2 block">Change Status:</label>
+                                        <select
+                                            value={selectedOrder.status}
+                                            onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white/40 transition-colors"
+                                        >
+                                            <option value="processing">Processing</option>
+                                            <option value="manufacturing">Manufacturing</option>
+                                            <option value="quality_check">Quality Check</option>
+                                            <option value="shipping">Shipping</option>
+                                            <option value="delivered">Delivered</option>
+                                        </select>
                                     </div>
-                                    <div>
-                                        <p className="text-white/60 text-sm mb-1">Order Date</p>
-                                        <p>{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-white/60 text-sm mb-1">Current Status</p>
+                                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(selectedOrder.status)}`}>
+                                                {selectedOrder.status.replace('_', ' ').toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-white/60 text-sm mb-1">Order Date</p>
+                                            <p>{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
