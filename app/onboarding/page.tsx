@@ -58,43 +58,63 @@ export default function OnboardingPage() {
         setLoading(true)
 
         try {
-            // If user is not loaded yet, wait a bit for the session to establish
+            // Get current user with retry logic
             let currentUser = user
+
             if (!currentUser && !authLoading) {
-                // Try to get the user again
+                // Wait a bit and try again
+                await new Promise(resolve => setTimeout(resolve, 1000))
                 const { data: { user: freshUser } } = await supabase.auth.getUser()
                 currentUser = freshUser
             }
 
             if (!currentUser) {
-                setError("Please wait a moment for your session to load, then try again.")
-                setLoading(false)
+                // If still no user, save to localStorage and continue
+                console.warn('No user session, saving to localStorage')
+                localStorage.setItem('onboarding_data', JSON.stringify(formData))
+                router.push('/exclusive')
                 return
             }
 
-            // Save profile data to Supabase
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: currentUser.id,
-                    full_name: formData.fullName,
-                    phone: formData.phone,
-                    address: formData.address,
-                    net_worth_range: formData.netWorthRange,
-                    owns_car: formData.ownsCar,
-                    car_model: formData.carModel,
-                    onboarding_completed: true,
-                    updated_at: new Date().toISOString()
-                })
+            // Try to save to Supabase profiles table
+            try {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: currentUser.id,
+                        full_name: formData.fullName,
+                        phone: formData.phone,
+                        preferences: {
+                            address: formData.address,
+                            netWorthRange: formData.netWorthRange,
+                            ownsCar: formData.ownsCar,
+                            carModel: formData.carModel
+                        },
+                        updated_at: new Date().toISOString()
+                    })
 
-            if (profileError) {
-                setError(profileError.message)
-            } else {
-                // Redirect to exclusive page
-                router.push('/exclusive')
+                if (profileError) {
+                    console.warn('Profile save error, using localStorage:', profileError)
+                    localStorage.setItem('onboarding_data', JSON.stringify({
+                        ...formData,
+                        userId: currentUser.id
+                    }))
+                }
+            } catch (dbError) {
+                console.warn('Database error, using localStorage:', dbError)
+                localStorage.setItem('onboarding_data', JSON.stringify({
+                    ...formData,
+                    userId: currentUser.id
+                }))
             }
+
+            // Always redirect to exclusive page
+            router.push('/exclusive')
+
         } catch (err) {
-            setError("An unexpected error occurred. Please try again.")
+            console.error('Onboarding error:', err)
+            setError("An error occurred. Redirecting anyway...")
+            setTimeout(() => router.push('/exclusive'), 2000)
         } finally {
             setLoading(false)
         }
@@ -115,8 +135,22 @@ export default function OnboardingPage() {
                     className="bg-neutral-900/50 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-2xl shadow-2xl"
                 >
                     <div className="text-center mb-10">
-                        <h1 className="text-4xl font-bold uppercase tracking-wider mb-2">Welcome to Koenigsegg</h1>
-                        <p className="text-white/60 text-sm">Complete your profile to access exclusive content</p>
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="flex-1"></div>
+                            <div className="flex-1">
+                                <h1 className="text-4xl font-bold uppercase tracking-wider mb-2">Welcome to Koenigsegg</h1>
+                                <p className="text-white/60 text-sm">Complete your profile to access exclusive content</p>
+                            </div>
+                            <div className="flex-1 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => router.push('/exclusive')}
+                                    className="text-sm text-white/60 hover:text-white transition-colors underline"
+                                >
+                                    Skip for now
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Progress Steps */}
