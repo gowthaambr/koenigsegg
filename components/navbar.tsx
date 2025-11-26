@@ -95,6 +95,13 @@ export function Navbar() {
                                                 <p className="text-sm text-white truncate">{user.email}</p>
                                             </div>
                                             <Link
+                                                href="/orders"
+                                                className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                                onClick={() => setShowUserMenu(false)}
+                                            >
+                                                📦 Track My Orders
+                                            </Link>
+                                            <Link
                                                 href="/exclusive"
                                                 className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
                                                 onClick={() => setShowUserMenu(false)}

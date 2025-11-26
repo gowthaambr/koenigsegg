@@ -44,11 +44,19 @@ export default function OrdersPage() {
 
         if (user) {
             fetchOrders()
+
+            // Auto-refresh every 30 seconds to get latest status updates
+            const interval = setInterval(() => {
+                fetchOrders()
+            }, 30000)
+
+            return () => clearInterval(interval)
         }
     }, [user, authLoading, router])
 
     const fetchOrders = async () => {
         try {
+            console.log('🔄 Fetching user orders...')
             // Try Supabase first
             const { data, error } = await supabase
                 .from('orders')
@@ -63,6 +71,7 @@ export default function OrdersPage() {
                 const userOrders = localOrders.filter((order: Order) => order.user_id === user?.id)
                 setOrders(userOrders)
             } else {
+                console.log(`✅ Fetched ${data?.length || 0} orders`)
                 setOrders(data || [])
             }
         } catch (err) {
