@@ -77,6 +77,12 @@ export default function PaymentPage() {
             return
         }
 
+        // Validate card details
+        if (!cardNumber || !cardName || !expiryDate || !cvv) {
+            alert('Please fill in all credit card details.')
+            return
+        }
+
         setLoading(true)
 
         try {
@@ -88,6 +94,9 @@ export default function PaymentPage() {
                 ? `${deliveryAddress.street || ''}, ${deliveryAddress.city || ''}, ${deliveryAddress.state || ''} ${deliveryAddress.zipCode || ''}, ${deliveryAddress.country || ''}`.replace(/,\s*,/g, ',').trim()
                 : 'Mock Delivery Address'
 
+            // Mask card number (show only last 4 digits)
+            const maskedCardNumber = `**** **** **** ${cardNumber.replace(/\s/g, '').slice(-4)}`
+
             const orderData = {
                 id: crypto.randomUUID(),
                 user_id: user.id,
@@ -96,10 +105,14 @@ export default function PaymentPage() {
                 interior: orderDetails.interior,
                 customizations: orderDetails.customizations || null,
                 price: orderDetails.price,
-                payment_method: 'mock',
+                payment_method: 'credit_card',
                 delivery_address: deliveryAddressStr,
                 status: 'processing',
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                // Payment details (mock)
+                card_last_four: cardNumber.replace(/\s/g, '').slice(-4),
+                card_holder_name: cardName,
+                card_type: detectCardType(cardNumber)
             }
 
             console.log('Attempting to save order:', orderData)
@@ -140,6 +153,15 @@ export default function PaymentPage() {
         } finally {
             setLoading(false)
         }
+    }
+
+    // Detect card type based on number
+    const detectCardType = (number: string) => {
+        const cleaned = number.replace(/\s/g, '')
+        if (cleaned.startsWith('4')) return 'Visa'
+        if (cleaned.startsWith('5')) return 'Mastercard'
+        if (cleaned.startsWith('3')) return 'American Express'
+        return 'Unknown'
     }
 
     if (authLoading || !orderDetails) {
@@ -309,10 +331,75 @@ export default function PaymentPage() {
                             </div>
                         </div>
 
-                        {/* Mock Payment Notice */}
-                        <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg">
-                            <p className="text-sm text-white/70 text-center">
-                                🎭 <strong>Mock Payment Mode</strong> - No actual payment required
+                        {/* Credit Card Payment Form */}
+                        <div className="mb-6">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <CreditCard className="w-5 h-5" />
+                                Payment Details
+                            </h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-bold uppercase text-white/70 ml-1 mb-2 block">
+                                        Card Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={cardNumber}
+                                        onChange={(e) => setCardNumber(e.target.value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim())}
+                                        placeholder="1234 5678 9012 3456"
+                                        maxLength={19}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold uppercase text-white/70 ml-1 mb-2 block">
+                                        Cardholder Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={cardName}
+                                        onChange={(e) => setCardName(e.target.value)}
+                                        placeholder="John Doe"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-white/70 ml-1 mb-2 block">
+                                            Expiry Date
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={expiryDate}
+                                            onChange={(e) => {
+                                                let value = e.target.value.replace(/\D/g, '')
+                                                if (value.length >= 2) {
+                                                    value = value.slice(0, 2) + '/' + value.slice(2, 4)
+                                                }
+                                                setExpiryDate(value)
+                                            }}
+                                            placeholder="MM/YY"
+                                            maxLength={5}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-white/70 ml-1 mb-2 block">
+                                            CVV
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={cvv}
+                                            onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
+                                            placeholder="123"
+                                            maxLength={3}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-white/40 mt-3 text-center">
+                                🔒 This is a mock payment - No actual charges will be made
                             </p>
                         </div>
 
@@ -321,12 +408,8 @@ export default function PaymentPage() {
                             disabled={loading}
                             className="w-full bg-white text-black font-bold uppercase tracking-widest py-4 rounded-full hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
                         >
-                            {loading ? "Processing Order..." : `Confirm Order - ${orderDetails.price}`}
+                            {loading ? "Processing Payment..." : `Pay ${orderDetails.price}`}
                         </button>
-
-                        <p className="text-xs text-white/40 text-center mt-4">
-                            🔒 This is a demonstration - No payment will be charged
-                        </p>
                     </motion.div>
                 </div>
             </div>

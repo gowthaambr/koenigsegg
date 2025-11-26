@@ -22,7 +22,11 @@ CREATE TABLE IF NOT EXISTS public.orders (
     delivery_address TEXT,
     status TEXT NOT NULL DEFAULT 'processing',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    -- Payment details (mock)
+    card_last_four TEXT,
+    card_holder_name TEXT,
+    card_type TEXT
 );
 
 -- Create indexes for better query performance
