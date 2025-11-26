@@ -1,14 +1,14 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 export function createClient() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    // Use placeholder values if env vars are missing (for build-time)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
-    // Check if credentials are valid (not placeholders)
-    if (!supabaseUrl || !supabaseKey ||
-        supabaseUrl.includes('placeholder') ||
-        supabaseKey.includes('placeholder')) {
-        throw new Error('Please configure your Supabase credentials in .env.local')
+    // Only warn in development, don't throw during build
+    if (typeof window !== 'undefined' &&
+        (supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder'))) {
+        console.warn('⚠️ Supabase credentials not configured. Some features may not work.')
     }
 
     return createBrowserClient(supabaseUrl, supabaseKey)
